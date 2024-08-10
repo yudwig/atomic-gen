@@ -1,6 +1,7 @@
 {
   "name": "your-package-name",
   "version": "1.0.0",
+  "license": "MIT",
   "main": "index.js",
   "type": "module",
   "bin": {
@@ -8,9 +9,11 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "ts-node --loader ts-node/esm src/index.ts"
+    "start": "yarn tsc --module esnext --outDir dist && node dist/index.js"
   },
   "devDependencies": {
+    "@types/node": "^22.2.0",
     "typescript": "^5.5.4"
-  }
+  },
+  "dependencies": {}
 }
