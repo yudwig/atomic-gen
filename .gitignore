@@ -1,2 +1,36 @@
-.idea
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Dependency directories
+jspm_packages/
+
+# Environment variables
+.env
+
+# Editor directories and files
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+*.sublime*
+*.swp
+
+# npm debug file
+npm-debug.log*
+
+# User files
 tmp
+
+# Test
+coverage/
+
+# Build
+lib/
+esm/
+umd/
+
