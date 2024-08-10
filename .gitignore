@@ -30,6 +30,7 @@ tmp
 coverage/
 
 # Build
+dist/
 lib/
 esm/
 umd/
