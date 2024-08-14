@@ -12,10 +12,12 @@
     "start": "yarn tsc --module esnext --outDir dist && node dist/cli.js"
   },
   "devDependencies": {
+    "@types/mustache": "^4.2.5",
     "@types/node": "^22.2.0",
     "typescript": "^5.5.4"
   },
   "dependencies": {
+    "mustache": "^4.2.0",
     "yaml": "^2.5.0"
   }
 }
