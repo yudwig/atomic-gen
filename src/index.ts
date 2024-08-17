@@ -181,6 +181,8 @@ class GenerateCommand implements Command {
     }
     const componentConfigs = config.createComponentConfigList(baseDir)
     const createComponentConfigs: ComponentConfig[] = []
+    const isForce = this.options.hasKey('force')
+
     componentConfigs.forEach(componentConfig => {
       const paths = [
         componentConfig.componentPath(),
@@ -188,10 +190,15 @@ class GenerateCommand implements Command {
       ]
       paths.forEach(path => {
         if (fs.existsSync(path)) {
-          console.log("  " + path);
+          if (isForce) {
+            console.log(pc.magenta("overwrite: ") + path)
+            createComponentConfigs.push(componentConfig)
+            return;
+          }
+          console.log(`skip: ${path}`);
           return;
         }
-        console.log(pc.green("+ " + path));
+        console.log(pc.green("create: ") + path);
         createComponentConfigs.push(componentConfig)
       })
     })
