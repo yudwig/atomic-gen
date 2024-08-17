@@ -15,38 +15,6 @@ interface Command {
   execute(): void
 }
 
-function main(args: string[]) {
-  if (args.length < 3) {
-    return handleError("Please enter command name");
-  }
-  const commandName = args[2];
-  const options = new OptionList(args.slice(3));
-  const command = CommandFactory.createCommand(commandName, options);
-  command.execute();
-}
-
-function handleError(message: string): never {
-  console.error(`Error: ${message}`);
-  process.exit(1);
-}
-
-class YesNoPrompt {
-
-  private reader = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-
-  ask(question: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      this.reader.question(`${question} (y/N): `, (answer) => {
-        resolve(answer.toLowerCase() === 'y');
-        this.reader.close();
-      });
-    });
-  }
-}
-
 class OptionList {
 
   private optionMap: Map<string, string>
@@ -134,11 +102,30 @@ class ComponentConfig {
   }
 }
 
+class YesNoPrompt {
+
+  private reader = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  ask(question: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.reader.question(`${question} (y/N): `, (answer) => {
+        resolve(answer.toLowerCase() === 'y');
+        this.reader.close();
+      });
+    });
+  }
+}
+
 class CommandFactory {
   static createCommand(commandName: string, options: OptionList): Command {
     switch (commandName) {
       case 'generate':
         return new GenerateCommand(options);
+      case 'help':
+        return new HelpCommand();
       default:
         handleError(
           `Unknown command: '${commandName}'. Please use a valid command.\n\n` +
@@ -147,6 +134,29 @@ class CommandFactory {
           '  delete    - Remove files based on the provided configuration.\n'
         );
     }
+  }
+}
+
+class ComponentFileGenerator {
+  readonly componentTemplate: string;
+  readonly storyTemplate: string;
+
+  constructor(componentTemplate: string, storyTemplate: string) {
+    this.componentTemplate = componentTemplate;
+    this.storyTemplate = storyTemplate;
+  }
+
+  generate(componentConfig: ComponentConfig) {
+    if (!fs.existsSync(componentConfig.componentDir())) {
+      fs.mkdirSync(componentConfig.componentDir(), { recursive: true });
+    }
+    this.createFile(componentConfig.componentPath(), this.componentTemplate, componentConfig);
+    this.createFile(componentConfig.storyPath(), this.storyTemplate, componentConfig);
+  }
+
+  private createFile(filePath: string, template: string, data: object) {
+    const content = Mustache.render(template, data);
+    fs.writeFileSync(filePath, content);
   }
 }
 
@@ -167,10 +177,9 @@ class GenerateCommand implements Command {
     const config = Config.read(configPath)
     const baseDir = this.options.get('base-dir') || DEFAULT_BASE_DIR;
     if (!fs.existsSync(baseDir)) {
-      return handleError(
-        "The base directory 'src/components' does not exist.\n" +
-        "Please create it manually or specify an alternative directory with --base-dir={path}."
-      );
+      console.log(pc.yellow(`The base directory '${baseDir}' does not exist. Creating the directory...`));
+      fs.mkdirSync(baseDir, { recursive: true });
+      console.log(pc.yellow(`Directory '${baseDir}' created successfully.\n`));
     }
     const componentConfigs = config.createComponentConfigList(baseDir)
     const createComponentConfigs: ComponentConfig[] = []
@@ -189,37 +198,61 @@ class GenerateCommand implements Command {
       })
     })
     if (createComponentConfigs.length === 0) {
-      console.log(pc.red("No files to create. Exiting the process."));
+      console.log(pc.yellow("No files to create. Exiting the process."));
       return;
     }
 
     const prompt = new YesNoPrompt();
-    const answer = await prompt.ask("This action will create XX new files. Do you want to proceed? [y/N]:")
+    const answer = await prompt.ask(`This action will create ${createComponentConfigs.length} new files. Do you want to proceed? [y/N]:`)
     if (!answer) {
-      console.log(pc.red('File creation canceled.'));
+      console.log(pc.yellow('File creation canceled.'));
       return;
     }
 
     const componentTemplate = fs.readFileSync(DEFAULT_COMPONENT_TMPL_PATH, 'utf8');
     const storyTemplate = fs.readFileSync(DEFAULT_STORY_TMPL_PATH, 'utf8');
+    const fileGenerator = new ComponentFileGenerator(componentTemplate, storyTemplate);
+
     createComponentConfigs.forEach(componentConfig => {
-      if (!fs.existsSync(componentConfig.componentDir())) {
-        fs.mkdirSync(componentConfig.componentDir(), { recursive: true });
-      }
-      const componentContent = Mustache.render(componentTemplate, {
-        componentName: componentConfig.componentName
-      });
-      const storyContent = Mustache.render(storyTemplate, {
-        componentName: componentConfig.componentName
-      });
-      fs.writeFileSync(componentConfig.componentPath(), componentContent);
-      fs.writeFileSync(componentConfig.storyPath(), storyContent);
+      fileGenerator.generate(componentConfig);
     })
     console.log(pc.green("All files were created successfully. Exiting the process."));
   }
 }
 
 
+function main(args: string[]) {
+  if (args.length < 3) {
+    return handleError("Please enter command name");
+  }
+  const commandName = args[2];
+  const options = new OptionList(args.slice(3));
+  const command = CommandFactory.createCommand(commandName, options);
+  command.execute();
+}
+
+function handleError(message: string): never {
+  console.error(`Error: ${message}`);
+  process.exit(1);
+}
+
+class HelpCommand implements Command {
+  execute(): void {
+    const helpMessage =
+      "Usage: npx atomic-gen <command> [options]\n\n" +
+      "Commands:\n" +
+      "  generate  - Create new files based on the provided configuration.\n" +
+      "              This will generate component and story files based on the structure defined in the configuration file.\n" +
+      "  help      - Show help information.\n" +
+      "              Displays this help message, listing all available commands and options.\n\n" +
+      "Generate command options:\n" +
+      "  --config   - Specify the configuration file. The configuration file should define the components to generate.\n" +
+      "  --base-dir - Specify the base directory for file generation. Default is 'src/components'.\n" +
+      "  --force    - Force overwrite existing files. Use this option to overwrite files even if they already exist.\n";
+
+    console.log(helpMessage);
+  }
+}
 export { main }
 
 
