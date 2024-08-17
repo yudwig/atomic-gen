@@ -3,13 +3,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { parse } from 'yaml';
+import { fileURLToPath } from 'url';
 import pc from "picocolors";
 import Mustache from 'mustache';
 import * as readline from "node:readline";
 
+const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_BASE_DIR="src/components"
-const DEFAULT_COMPONENT_TMPL_PATH="templates/component.tsx.mustache"
-const DEFAULT_STORY_TMPL_PATH="templates/component.stories.ts.mustache"
+const DEFAULT_COMPONENT_TMPL_PATH= path.join(PACKAGE_ROOT, "templates/component.tsx.mustache");
+const DEFAULT_STORY_TMPL_PATH= path.join(PACKAGE_ROOT, "templates/component.stories.ts.mustache");
 
 interface Command {
   execute(): void
@@ -205,10 +207,11 @@ class GenerateCommand implements Command {
       return;
     }
 
-    const componentTemplate = fs.readFileSync(DEFAULT_COMPONENT_TMPL_PATH, 'utf8');
-    const storyTemplate = fs.readFileSync(DEFAULT_STORY_TMPL_PATH, 'utf8');
+    const componentTemplatePath = this.options.get("component-template") || DEFAULT_COMPONENT_TMPL_PATH;
+    const storyTemplatePath = this.options.get("story-template") || DEFAULT_STORY_TMPL_PATH;
+    const componentTemplate = fs.readFileSync(componentTemplatePath, 'utf8');
+    const storyTemplate = fs.readFileSync(storyTemplatePath, 'utf8');
     const fileGenerator = new ComponentFileGenerator(componentTemplate, storyTemplate);
-
     createComponentConfigs.forEach(componentConfig => {
       fileGenerator.generate(componentConfig);
     })
@@ -244,9 +247,6 @@ function main(args: string[]) {
   }
   const options = new OptionList(args.slice(3));
   const commandName = options.hasKey("help") ? "help" : args[2];
-
-  console.log(options);
-
   const command = CommandFactory.createCommand(commandName, options);
   command.execute();
 }
