@@ -16,7 +16,6 @@ interface Command {
 }
 
 class OptionList {
-
   private optionMap: Map<string, string>
 
   constructor(options: string[]) {
@@ -27,7 +26,7 @@ class OptionList {
     const map = new Map();
     options.forEach(option => {
       const [key, value] = option.split('=');
-      if (key.startsWith('--') && key.length > 2 && value !== undefined) {
+      if (key.startsWith('--') && key.length > 2) {
         map.set(key.slice(2), value);
       }
     });
@@ -37,10 +36,13 @@ class OptionList {
   get(key: string): string | undefined {
     return this.optionMap.get(key);
   }
+
+  hasKey(key: string): boolean {
+    return this.optionMap.has(key);
+  }
 }
 
 class Config {
-
   private configMap: Map<string, string[]>
 
   constructor(configMap: Map<string, string[]>) {
@@ -76,11 +78,8 @@ class Config {
 }
 
 class ComponentConfig {
-
   readonly baseDir: string;
-
   readonly category: string;
-
   readonly componentName: string;
 
   constructor(baseDir: string, category: string, componentName: string) {
@@ -103,7 +102,6 @@ class ComponentConfig {
 }
 
 class YesNoPrompt {
-
   private reader = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -161,7 +159,6 @@ class ComponentFileGenerator {
 }
 
 class GenerateCommand implements Command {
-
   private options: OptionList
 
   constructor(options: OptionList) {
@@ -169,7 +166,6 @@ class GenerateCommand implements Command {
   }
 
   async execute() {
-
     const configPath = this.options.get("config")
     if (configPath === undefined) {
       return handleError("Input config path. --config={path}")
@@ -220,25 +216,9 @@ class GenerateCommand implements Command {
   }
 }
 
-
-function main(args: string[]) {
-  if (args.length < 3) {
-    return handleError("Please enter command name");
-  }
-  const commandName = args[2];
-  const options = new OptionList(args.slice(3));
-  const command = CommandFactory.createCommand(commandName, options);
-  command.execute();
-}
-
-function handleError(message: string): never {
-  console.error(`Error: ${message}`);
-  process.exit(1);
-}
-
 class HelpCommand implements Command {
   execute(): void {
-    const helpMessage =
+    console.log(
       "Usage: npx atomic-gen <command> [options]\n\n" +
       "Commands:\n" +
       "  generate  - Create new files based on the provided configuration.\n" +
@@ -248,11 +228,29 @@ class HelpCommand implements Command {
       "Generate command options:\n" +
       "  --config   - Specify the configuration file. The configuration file should define the components to generate.\n" +
       "  --base-dir - Specify the base directory for file generation. Default is 'src/components'.\n" +
-      "  --force    - Force overwrite existing files. Use this option to overwrite files even if they already exist.\n";
-
-    console.log(helpMessage);
+      "  --force    - Force overwrite existing files. Use this option to overwrite files even if they already exist.\n"
+    );
   }
 }
+
+function handleError(message: string): never {
+  console.error(`Error: ${message}`);
+  process.exit(1);
+}
+
+function main(args: string[]) {
+  if (args.length < 3) {
+    return handleError("Please enter command name");
+  }
+  const options = new OptionList(args.slice(3));
+  const commandName = options.hasKey("help") ? "help" : args[2];
+
+  console.log(options);
+
+  const command = CommandFactory.createCommand(commandName, options);
+  command.execute();
+}
+
 export { main }
 
 
