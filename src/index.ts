@@ -3,7 +3,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { parse } from 'yaml';
-import { styleText } from 'node:util';
+import pc from "picocolors";
 import Mustache from 'mustache';
 import * as readline from "node:readline";
 
@@ -80,9 +80,12 @@ class Config {
   }
 
   static read(configPath: string): Config {
+    if (!fs.existsSync(configPath)) {
+      return handleError(`Not found configuration file. path: ${configPath}`);
+    }
     const config = parse(fs.readFileSync(path.resolve(configPath), 'utf8'));
     if (typeof config !== 'object' || config === null || Array.isArray(config)) {
-      handleError("Invalid configuration: Expected an object.")
+      return handleError("Invalid configuration: Expected an object.")
     }
     const configMap = new Map<string, string[]>();
     Object.entries(config).forEach(([key, val]) => {
@@ -164,7 +167,10 @@ class GenerateCommand implements Command {
     const config = Config.read(configPath)
     const baseDir = this.options.get('base-dir') || DEFAULT_BASE_DIR;
     if (!fs.existsSync(baseDir)) {
-      return handleError("Not exist base directory: 'src/components'. --base-dir={path}")
+      return handleError(
+        "The base directory 'src/components' does not exist.\n" +
+        "Please create it manually or specify an alternative directory with --base-dir={path}."
+      );
     }
     const componentConfigs = config.createComponentConfigList(baseDir)
     const createComponentConfigs: ComponentConfig[] = []
@@ -178,19 +184,19 @@ class GenerateCommand implements Command {
           console.log("  " + path);
           return;
         }
-        console.log(styleText("green", "+ " + path));
+        console.log(pc.green("+ " + path));
         createComponentConfigs.push(componentConfig)
       })
     })
     if (createComponentConfigs.length === 0) {
-      console.log("No files to create. Exiting the process.")
+      console.log(pc.red("No files to create. Exiting the process."));
       return;
     }
 
     const prompt = new YesNoPrompt();
     const answer = await prompt.ask("This action will create XX new files. Do you want to proceed? [y/N]:")
     if (!answer) {
-      console.log('File creation canceled.');
+      console.log(pc.red('File creation canceled.'));
       return;
     }
 
@@ -209,7 +215,7 @@ class GenerateCommand implements Command {
       fs.writeFileSync(componentConfig.componentPath(), componentContent);
       fs.writeFileSync(componentConfig.storyPath(), storyContent);
     })
-    console.log("All files were created successfully. Exiting the process.")
+    console.log(pc.green("All files were created successfully. Exiting the process."));
   }
 }
 
