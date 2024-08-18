@@ -249,15 +249,14 @@ function handleError(message: string): never {
 }
 
 function main(args: string[]) {
-  if (args.length < 3) {
-    return handleError("Please enter command name");
-  }
-  const options = new OptionList(args.slice(3));
-  const commandName = options.hasKey("help") ? "help" : args[2];
+  const options = new OptionList(args);
+  const commandName = options.hasKey("help") ? "help" : (args.slice(2).find(arg => {
+    if (!arg.startsWith('--')) {
+      return arg;
+    }
+  }) || "generate");
   const command = CommandFactory.createCommand(commandName, options);
   command.execute();
 }
 
 export { main }
-
-
