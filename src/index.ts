@@ -236,7 +236,11 @@ class GenerateCommand implements Command {
       });
     });
     if (createComponentConfigs.length === 0) {
-      console.log(pc.yellow("No files to create. Exiting the process.\nTo overwrite existing files, use the --force option."));
+      console.log(
+        pc.yellow(
+          "No files to create. Exiting the process.\nTo overwrite existing files, use the --force option.",
+        ),
+      );
       return;
     }
 
