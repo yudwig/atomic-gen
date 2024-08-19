@@ -180,8 +180,12 @@ class ComponentFileGenerator {
   }
 
   private createFile(filePath: string, template: string, data: object) {
-    const content = Mustache.render(template, data);
-    fs.writeFileSync(filePath, content);
+    let content = Mustache.render(template, data);
+    if (content === undefined) {
+      handleError(`Failed to render template for file: ${filePath}`);
+    }
+    content = content.trim() + "\n";
+    fs.writeFileSync(filePath, content.trim());
   }
 }
 
@@ -232,7 +236,7 @@ class GenerateCommand implements Command {
       });
     });
     if (createComponentConfigs.length === 0) {
-      console.log(pc.yellow("No files to create. Exiting the process."));
+      console.log(pc.yellow("No files to create. Exiting the process.\nTo overwrite existing files, use the --force option."));
       return;
     }
 
