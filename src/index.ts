@@ -26,16 +26,16 @@ interface Command {
   execute(): void;
 }
 
-class OptionList {
+class CommandLineOptions {
   private optionMap: Map<string, string>;
 
-  constructor(options: string[]) {
-    this.optionMap = this.parseOptions(options);
+  constructor(args: string[]) {
+    this.optionMap = this.parseArgs(args);
   }
 
-  private parseOptions(options: string[]): Map<string, string> {
+  private parseArgs(args: string[]): Map<string, string> {
     const map = new Map();
-    options.forEach((option) => {
+    args.forEach((option) => {
       const [key, value] = option.split("=");
       if (key.startsWith("--") && key.length > 2) {
         map.set(key.slice(2), value);
@@ -60,24 +60,29 @@ class Config {
     this.configMap = configMap;
   }
 
-  static read(configPath: string): Config {
+  static loadFromFile(configPath: string): Config {
     if (!fs.existsSync(configPath)) {
-      return handleError(`Not found configuration file. path: ${configPath}`);
+      handleError(`Configuration file not found: ${configPath}`);
     }
-    const config = parse(fs.readFileSync(path.resolve(configPath), "utf8"));
+
+    const rawConfig = parse(fs.readFileSync(path.resolve(configPath), "utf8"));
     if (
-      typeof config !== "object" ||
-      config === null ||
-      Array.isArray(config)
+      typeof rawConfig !== "object" ||
+      rawConfig === null ||
+      Array.isArray(rawConfig)
     ) {
-      return handleError("Invalid configuration: Expected an object.");
+      handleError(
+        "Invalid configuration format: The file should contain a valid YAML object.",
+      );
     }
+
     const configMap = new Map<string, string[]>();
-    Object.entries(config).forEach(([key, val]) => {
-      if (Array.isArray(val)) {
-        configMap.set(key, val);
+    Object.entries(rawConfig).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        configMap.set(key, value);
       }
     });
+
     return new Config(configMap);
   }
 
@@ -127,7 +132,7 @@ class YesNoPrompt {
   ask(question: string): Promise<boolean> {
     return new Promise((resolve) => {
       this.reader.question(`${question} (y/N): `, (answer) => {
-        resolve(answer.toLowerCase() === "y");
+        resolve(answer.trim().toLowerCase() === "y");
         this.reader.close();
       });
     });
@@ -135,7 +140,10 @@ class YesNoPrompt {
 }
 
 class CommandFactory {
-  static createCommand(commandName: string, options: OptionList): Command {
+  static createCommand(
+    commandName: string,
+    options: CommandLineOptions,
+  ): Command {
     switch (commandName) {
       case "generate":
         return new GenerateCommand(options);
@@ -143,23 +151,17 @@ class CommandFactory {
         return new HelpCommand();
       default:
         handleError(
-          `Unknown command: '${commandName}'. Please use a valid command.\n\n` +
-            "Available commands are:\n" +
-            "  generate  - Create new files based on the provided configuration.\n" +
-            "  delete    - Remove files based on the provided configuration.\n",
+          `Unknown command: '${commandName}'. Use 'help' for available commands.`,
         );
     }
   }
 }
 
 class ComponentFileGenerator {
-  readonly componentTemplate: string;
-  readonly storyTemplate: string;
-
-  constructor(componentTemplate: string, storyTemplate: string) {
-    this.componentTemplate = componentTemplate;
-    this.storyTemplate = storyTemplate;
-  }
+  constructor(
+    readonly componentTemplate: string,
+    readonly storyTemplate: string,
+  ) {}
 
   generate(componentConfig: ComponentConfig) {
     if (!fs.existsSync(componentConfig.componentDir())) {
@@ -184,9 +186,9 @@ class ComponentFileGenerator {
 }
 
 class GenerateCommand implements Command {
-  private options: OptionList;
+  private options: CommandLineOptions;
 
-  constructor(options: OptionList) {
+  constructor(options: CommandLineOptions) {
     this.options = options;
   }
 
@@ -195,7 +197,7 @@ class GenerateCommand implements Command {
     if (configPath === undefined) {
       return handleError("Input config path. --config={path}");
     }
-    const config = Config.read(configPath);
+    const config = Config.loadFromFile(configPath);
     const baseDir = this.options.get("base-dir") || DEFAULT_BASE_DIR;
     if (!fs.existsSync(baseDir)) {
       console.log(
@@ -285,7 +287,7 @@ function handleError(message: string): never {
 }
 
 function main(args: string[]) {
-  const options = new OptionList(args);
+  const options = new CommandLineOptions(args);
   const commandName = options.hasKey("help")
     ? "help"
     : args.slice(2).find((arg) => {
