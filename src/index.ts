@@ -86,20 +86,20 @@ class Config {
     return new Config(configMap);
   }
 
-  createComponentConfigList(baseDir: string): ComponentConfig[] {
-    const componentConfigs: ComponentConfig[] = [];
+  createComponentList(baseDir: string): Component[] {
+    const components: Component[] = [];
     this.configMap.forEach((componentNames, category) => {
       componentNames.forEach((componentName) => {
-        componentConfigs.push(
-          new ComponentConfig(baseDir, category, componentName),
+        components.push(
+          new Component(baseDir, category, componentName),
         );
       });
     });
-    return componentConfigs;
+    return components;
   }
 }
 
-class ComponentConfig {
+class Component {
   readonly baseDir: string;
   readonly category: string;
   readonly componentName: string;
@@ -133,9 +133,12 @@ class YesNoPrompt {
     return new Promise((resolve) => {
       this.reader.question(`${question} (y/N): `, (answer) => {
         resolve(answer.trim().toLowerCase() === "y");
-        this.reader.close();
       });
     });
+  }
+
+  close() {
+    this.reader.close();
   }
 }
 
@@ -163,19 +166,19 @@ class ComponentFileGenerator {
     readonly storyTemplate: string,
   ) {}
 
-  generate(componentConfig: ComponentConfig) {
-    if (!fs.existsSync(componentConfig.componentDir())) {
-      fs.mkdirSync(componentConfig.componentDir(), { recursive: true });
+  generate(component: Component) {
+    if (!fs.existsSync(component.componentDir())) {
+      fs.mkdirSync(component.componentDir(), { recursive: true });
     }
     this.createFile(
-      componentConfig.componentPath(),
+      component.componentPath(),
       this.componentTemplate,
-      componentConfig,
+      component,
     );
     this.createFile(
-      componentConfig.storyPath(),
+      component.storyPath(),
       this.storyTemplate,
-      componentConfig,
+      component,
     );
   }
 
@@ -212,30 +215,30 @@ class GenerateCommand implements Command {
       fs.mkdirSync(baseDir, { recursive: true });
       console.log(pc.yellow(`Directory '${baseDir}' created successfully.\n`));
     }
-    const componentConfigs = config.createComponentConfigList(baseDir);
-    const createComponentConfigs: ComponentConfig[] = [];
+    const components = config.createComponentList(baseDir);
+    const newComponents: Component[] = [];
     const isForce = this.options.hasKey("force");
 
-    componentConfigs.forEach((componentConfig) => {
+    components.forEach((component) => {
       const paths = [
-        componentConfig.componentPath(),
-        componentConfig.storyPath(),
+        component.componentPath(),
+        component.storyPath(),
       ];
       paths.forEach((path) => {
         if (fs.existsSync(path)) {
           if (isForce) {
             console.log(pc.magenta("overwrite: ") + path);
-            createComponentConfigs.push(componentConfig);
+            newComponents.push(component);
             return;
           }
           console.log(`skip: ${path}`);
           return;
         }
         console.log(pc.green("create: ") + path);
-        createComponentConfigs.push(componentConfig);
+        newComponents.push(component);
       });
     });
-    if (createComponentConfigs.length === 0) {
+    if (newComponents.length === 0) {
       console.log(
         pc.yellow(
           "No files to create. Exiting the process.\nTo overwrite existing files, use the --force option.",
@@ -246,8 +249,9 @@ class GenerateCommand implements Command {
 
     const prompt = new YesNoPrompt();
     const answer = await prompt.ask(
-      `This action will create ${createComponentConfigs.length} new files. Do you want to proceed? [y/N]:`,
+      `This action will create ${newComponents.length} new files. Do you want to proceed? [y/N]:`,
     );
+    prompt.close();
     if (!answer) {
       console.log(pc.yellow("File creation canceled."));
       return;
@@ -263,8 +267,8 @@ class GenerateCommand implements Command {
       componentTemplate,
       storyTemplate,
     );
-    createComponentConfigs.forEach((componentConfig) => {
-      fileGenerator.generate(componentConfig);
+    newComponents.forEach((component) => {
+      fileGenerator.generate(component);
     });
     console.log(
       pc.green("All files were created successfully. Exiting the process."),
