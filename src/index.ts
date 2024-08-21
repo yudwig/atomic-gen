@@ -90,9 +90,7 @@ class Config {
     const components: Component[] = [];
     this.configMap.forEach((componentNames, category) => {
       componentNames.forEach((componentName) => {
-        components.push(
-          new Component(baseDir, category, componentName),
-        );
+        components.push(new Component(baseDir, category, componentName));
       });
     });
     return components;
@@ -175,11 +173,7 @@ class ComponentFileGenerator {
       this.componentTemplate,
       component,
     );
-    this.createFile(
-      component.storyPath(),
-      this.storyTemplate,
-      component,
-    );
+    this.createFile(component.storyPath(), this.storyTemplate, component);
   }
 
   private createFile(filePath: string, template: string, data: object) {
@@ -220,10 +214,7 @@ class GenerateCommand implements Command {
     const isForce = this.options.hasKey("force");
 
     components.forEach((component) => {
-      const paths = [
-        component.componentPath(),
-        component.storyPath(),
-      ];
+      const paths = [component.componentPath(), component.storyPath()];
       paths.forEach((path) => {
         if (fs.existsSync(path)) {
           if (isForce) {
