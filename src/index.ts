@@ -182,7 +182,7 @@ class ComponentFileGenerator {
       handleError(`Failed to render template for file: ${filePath}`);
     }
     content = content.trim() + '\n';
-    fs.writeFileSync(filePath, content.trim());
+    fs.writeFileSync(filePath, content);
   }
 }
 
