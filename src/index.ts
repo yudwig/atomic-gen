@@ -1,25 +1,25 @@
 #!/usr/bin/env node
 
-import * as fs from "fs";
-import * as path from "path";
-import { parse } from "yaml";
-import { fileURLToPath } from "url";
-import pc from "picocolors";
-import Mustache from "mustache";
-import * as readline from "node:readline";
+import * as fs from 'fs';
+import * as path from 'path';
+import { parse } from 'yaml';
+import { fileURLToPath } from 'url';
+import pc from 'picocolors';
+import Mustache from 'mustache';
+import * as readline from 'node:readline';
 
 const PACKAGE_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "..",
+  '..',
 );
-const DEFAULT_BASE_DIR = "src/components";
+const DEFAULT_BASE_DIR = 'src/components';
 const DEFAULT_COMPONENT_TMPL_PATH = path.join(
   PACKAGE_ROOT,
-  "templates/component.tsx.mustache",
+  'templates/component.tsx.mustache',
 );
 const DEFAULT_STORY_TMPL_PATH = path.join(
   PACKAGE_ROOT,
-  "templates/component.stories.ts.mustache",
+  'templates/component.stories.ts.mustache',
 );
 
 interface Command {
@@ -36,8 +36,8 @@ class CommandLineOptions {
   private parseArgs(args: string[]): Map<string, string> {
     const map = new Map();
     args.forEach((option) => {
-      const [key, value] = option.split("=");
-      if (key.startsWith("--") && key.length > 2) {
+      const [key, value] = option.split('=');
+      if (key.startsWith('--') && key.length > 2) {
         map.set(key.slice(2), value);
       }
     });
@@ -65,14 +65,14 @@ class Config {
       handleError(`Configuration file not found: ${configPath}`);
     }
 
-    const rawConfig = parse(fs.readFileSync(path.resolve(configPath), "utf8"));
+    const rawConfig = parse(fs.readFileSync(path.resolve(configPath), 'utf8'));
     if (
-      typeof rawConfig !== "object" ||
+      typeof rawConfig !== 'object' ||
       rawConfig === null ||
       Array.isArray(rawConfig)
     ) {
       handleError(
-        "Invalid configuration format: The file should contain a valid YAML object.",
+        'Invalid configuration format: The file should contain a valid YAML object.',
       );
     }
 
@@ -130,7 +130,7 @@ class YesNoPrompt {
   ask(question: string): Promise<boolean> {
     return new Promise((resolve) => {
       this.reader.question(`${question} (y/N): `, (answer) => {
-        resolve(answer.trim().toLowerCase() === "y");
+        resolve(answer.trim().toLowerCase() === 'y');
       });
     });
   }
@@ -146,9 +146,9 @@ class CommandFactory {
     options: CommandLineOptions,
   ): Command {
     switch (commandName) {
-      case "generate":
+      case 'generate':
         return new GenerateCommand(options);
-      case "help":
+      case 'help':
         return new HelpCommand();
       default:
         handleError(
@@ -181,7 +181,7 @@ class ComponentFileGenerator {
     if (content === undefined) {
       handleError(`Failed to render template for file: ${filePath}`);
     }
-    content = content.trim() + "\n";
+    content = content.trim() + '\n';
     fs.writeFileSync(filePath, content.trim());
   }
 }
@@ -194,12 +194,12 @@ class GenerateCommand implements Command {
   }
 
   async execute() {
-    const configPath = this.options.get("config");
+    const configPath = this.options.get('config');
     if (configPath === undefined) {
-      return handleError("Input config path. --config={path}");
+      return handleError('Input config path. --config={path}');
     }
     const config = Config.loadFromFile(configPath);
-    const baseDir = this.options.get("base-dir") || DEFAULT_BASE_DIR;
+    const baseDir = this.options.get('base-dir') || DEFAULT_BASE_DIR;
     if (!fs.existsSync(baseDir)) {
       console.log(
         pc.yellow(
@@ -211,28 +211,28 @@ class GenerateCommand implements Command {
     }
     const components = config.createComponentList(baseDir);
     const newComponents: Component[] = [];
-    const isForce = this.options.hasKey("force");
+    const isForce = this.options.hasKey('force');
 
     components.forEach((component) => {
       const paths = [component.componentPath(), component.storyPath()];
       paths.forEach((path) => {
         if (fs.existsSync(path)) {
           if (isForce) {
-            console.log(pc.magenta("overwrite: ") + path);
+            console.log(pc.magenta('overwrite: ') + path);
             newComponents.push(component);
             return;
           }
           console.log(`skip: ${path}`);
           return;
         }
-        console.log(pc.green("create: ") + path);
+        console.log(pc.green('create: ') + path);
         newComponents.push(component);
       });
     });
     if (newComponents.length === 0) {
       console.log(
         pc.yellow(
-          "No files to create. Exiting the process.\nTo overwrite existing files, use the --force option.",
+          'No files to create. Exiting the process.\nTo overwrite existing files, use the --force option.',
         ),
       );
       return;
@@ -244,16 +244,16 @@ class GenerateCommand implements Command {
     );
     prompt.close();
     if (!answer) {
-      console.log(pc.yellow("File creation canceled."));
+      console.log(pc.yellow('File creation canceled.'));
       return;
     }
 
     const componentTemplatePath =
-      this.options.get("component-template") || DEFAULT_COMPONENT_TMPL_PATH;
+      this.options.get('component-template') || DEFAULT_COMPONENT_TMPL_PATH;
     const storyTemplatePath =
-      this.options.get("story-template") || DEFAULT_STORY_TMPL_PATH;
-    const componentTemplate = fs.readFileSync(componentTemplatePath, "utf8");
-    const storyTemplate = fs.readFileSync(storyTemplatePath, "utf8");
+      this.options.get('story-template') || DEFAULT_STORY_TMPL_PATH;
+    const componentTemplate = fs.readFileSync(componentTemplatePath, 'utf8');
+    const storyTemplate = fs.readFileSync(storyTemplatePath, 'utf8');
     const fileGenerator = new ComponentFileGenerator(
       componentTemplate,
       storyTemplate,
@@ -262,7 +262,7 @@ class GenerateCommand implements Command {
       fileGenerator.generate(component);
     });
     console.log(
-      pc.green("All files were created successfully. Exiting the process."),
+      pc.green('All files were created successfully. Exiting the process.'),
     );
   }
 }
@@ -270,16 +270,16 @@ class GenerateCommand implements Command {
 class HelpCommand implements Command {
   execute(): void {
     console.log(
-      "Usage: npx atomic-gen <command> [options]\n\n" +
-        "Commands:\n" +
-        "  generate  - Create new files based on the provided configuration.\n" +
-        "              This will generate component and story files based on the structure defined in the configuration file.\n" +
-        "  help      - Show help information.\n" +
-        "              Displays this help message, listing all available commands and options.\n\n" +
-        "Generate command options:\n" +
-        "  --config   - Specify the configuration file. The configuration file should define the components to generate.\n" +
+      'Usage: npx atomic-gen <command> [options]\n\n' +
+        'Commands:\n' +
+        '  generate  - Create new files based on the provided configuration.\n' +
+        '              This will generate component and story files based on the structure defined in the configuration file.\n' +
+        '  help      - Show help information.\n' +
+        '              Displays this help message, listing all available commands and options.\n\n' +
+        'Generate command options:\n' +
+        '  --config   - Specify the configuration file. The configuration file should define the components to generate.\n' +
         "  --base-dir - Specify the base directory for file generation. Default is 'src/components'.\n" +
-        "  --force    - Force overwrite existing files. Use this option to overwrite files even if they already exist.\n",
+        '  --force    - Force overwrite existing files. Use this option to overwrite files even if they already exist.\n',
     );
   }
 }
@@ -291,13 +291,13 @@ function handleError(message: string): never {
 
 function main(args: string[]) {
   const options = new CommandLineOptions(args);
-  const commandName = options.hasKey("help")
-    ? "help"
+  const commandName = options.hasKey('help')
+    ? 'help'
     : args.slice(2).find((arg) => {
-        if (!arg.startsWith("--")) {
+        if (!arg.startsWith('--')) {
           return arg;
         }
-      }) || "generate";
+      }) || 'generate';
   const command = CommandFactory.createCommand(commandName, options);
   command.execute();
 }

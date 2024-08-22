@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc",
     "start": "yarn tsc --module esnext --outDir dist && node dist/cli.js",
-    "format": "yarn eslint && yarn prettier src --write"
+    "format": "yarn eslint && yarn prettier --single-quote src --write"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
