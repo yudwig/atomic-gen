@@ -23,7 +23,7 @@ const DEFAULT_STORY_TMPL_PATH = path.join(
 );
 
 interface Command {
-  execute(): void;
+  execute(): Promise<void>;
 }
 
 class CommandLineOptions {
@@ -250,7 +250,7 @@ class GenerateCommand implements Command {
 }
 
 class HelpCommand implements Command {
-  execute(): void {
+  async execute() {
     console.log(
       'Usage: npx atomic-gen <command> [options]\n\n' +
         'Commands:\n' +
@@ -265,6 +265,7 @@ class HelpCommand implements Command {
         "  --base-dir - Specify the base directory for file generation. Default is 'src/components'.\n" +
         '  --force    - Force overwrite existing files. Use this option to overwrite files even if they already exist.\n',
     );
+    await Promise.resolve();
   }
 }
 
@@ -289,7 +290,7 @@ function createCommand(
   }
 }
 
-function main(args: string[]) {
+async function main(args: string[]) {
   const options = new CommandLineOptions(args);
   const commandName = options.hasKey('help')
     ? 'help'
@@ -299,7 +300,7 @@ function main(args: string[]) {
         }
       }) || 'generate';
   const command = createCommand(commandName, options);
-  command.execute();
+  await command.execute();
 }
 
 export { main };

@@ -1,2 +1,2 @@
 import { main } from './index.js';
-main(process.argv);
+await main(process.argv);
