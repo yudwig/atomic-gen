@@ -4,9 +4,14 @@
   "description": "A CLI tool for automating the generation of React components and their corresponding Storybook stories using customizable templates.",
   "author": "yudwig",
   "license": "MIT",
-  "publishConfig": {
-    "registry": "https://github.com/yudwig/atomic-gen"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yudwig/atomic-gen.git"
   },
+  "bugs": {
+    "url": "https://github.com/yudwig/atomic-gen/issues"
+  },
+  "homepage": "https://github.com/yudwig/atomic-gen#readme",
   "main": "index.js",
   "type": "module",
   "bin": {
