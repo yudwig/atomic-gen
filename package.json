@@ -12,7 +12,6 @@
     "url": "https://github.com/yudwig/atomic-gen/issues"
   },
   "homepage": "https://github.com/yudwig/atomic-gen#readme",
-  "main": "index.js",
   "type": "module",
   "bin": {
     "atomic-gen": "dist/cli.js"
