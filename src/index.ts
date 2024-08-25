@@ -65,7 +65,9 @@ class Config {
       handleError(`Configuration file not found: ${configPath}`);
     }
 
-    const rawConfig = parse(fs.readFileSync(path.resolve(configPath), 'utf8')) as { [key: string]: string[] }
+    const rawConfig = parse(
+      fs.readFileSync(path.resolve(configPath), 'utf8'),
+    ) as { [key: string]: string[] };
     if (
       typeof rawConfig !== 'object' ||
       rawConfig === null ||
