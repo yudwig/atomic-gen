@@ -272,12 +272,14 @@ class HelpCommand implements Command {
     console.log(
       'Usage: npx atomic-gen <command> [options]\n\n' +
         'Commands:\n' +
-        '  generate  - Create new files based on the provided configuration.\n' +
-        '              This will generate component and story files based on the structure defined in the configuration file.\n' +
-        '  help      - Show help information.\n' +
-        '              Displays this help message, listing all available commands and options.\n\n' +
+        '  generate - Create new files based on the provided configuration.\n' +
+        '             This will generate component and story files based on the structure ' +
+        'defined in the configuration file.\n' +
+        '  help     - Show help information.\n' +
+        '             Displays this help message, listing all available commands and options.\n\n' +
         'Generate command options:\n' +
-        '  --config   - Specify the configuration file. The configuration file should define the components to generate.\n' +
+        '  --config   - Specify the configuration file. The configuration file should define ' +
+        'the components to generate.\n' +
         "  --base-dir - Specify the base directory for file generation. Default is 'src/components'.\n" +
         '  --force    - Force overwrite existing files. Use this option to overwrite files even if they already exist.\n',
     );
