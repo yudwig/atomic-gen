@@ -1,28 +1,29 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import typescriptEslintParser from "@typescript-eslint/parser";
-import typescriptEslint from "@typescript-eslint/eslint-plugin";
+import typescriptParser from '@typescript-eslint/parser';
+import typescriptPlugin from '@typescript-eslint/eslint-plugin';
+import globals from 'globals';
 
 export default [
   {
-    files: ["./src/**/*.ts"],
-  },
-  pluginJs.configs.recommended,
-  {
+    files: ['src/**/*.ts'],
     languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        project: './tsconfig.json',
+        sourceType: 'module',
+        ecmaVersion: 'latest',
+      },
       globals: {
         ...globals.node,
-      }
-    }
-  },
-  {
-    languageOptions: {
-      parser: typescriptEslintParser,
+        ...globals.browser,
+      },
     },
-  },
-  {
     plugins: {
-      "@typescript-eslint": typescriptEslint,
+      '@typescript-eslint': typescriptPlugin,
+    },
+    rules: {
+      ...typescriptPlugin.configs['recommended'].rules,
+      ...typescriptPlugin.configs['recommended-requiring-type-checking'].rules,
+      ...typescriptPlugin.configs['strict'].rules,
     },
   },
 ];
