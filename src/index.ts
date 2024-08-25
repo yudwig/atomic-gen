@@ -34,7 +34,7 @@ class CommandLineOptions {
   }
 
   private parseArgs(args: string[]): Map<string, string> {
-    const map = new Map();
+    const map = new Map<string, string>();
     args.forEach((option) => {
       const [key, value] = option.split('=');
       if (key.startsWith('--') && key.length > 2) {
@@ -65,7 +65,7 @@ class Config {
       handleError(`Configuration file not found: ${configPath}`);
     }
 
-    const rawConfig = parse(fs.readFileSync(path.resolve(configPath), 'utf8'));
+    const rawConfig = parse(fs.readFileSync(path.resolve(configPath), 'utf8')) as { [key: string]: string[] }
     if (
       typeof rawConfig !== 'object' ||
       rawConfig === null ||
@@ -140,24 +140,6 @@ class YesNoPrompt {
   }
 }
 
-class CommandFactory {
-  static createCommand(
-    commandName: string,
-    options: CommandLineOptions,
-  ): Command {
-    switch (commandName) {
-      case 'generate':
-        return new GenerateCommand(options);
-      case 'help':
-        return new HelpCommand();
-      default:
-        handleError(
-          `Unknown command: '${commandName}'. Use 'help' for available commands.`,
-        );
-    }
-  }
-}
-
 class ComponentFileGenerator {
   constructor(
     readonly componentTemplate: string,
@@ -196,7 +178,7 @@ class GenerateCommand implements Command {
   async execute() {
     const configPath = this.options.get('config');
     if (configPath === undefined) {
-      return handleError('Input config path. --config={path}');
+      handleError('Input config path. --config={path}');
     }
     const config = Config.loadFromFile(configPath);
     const baseDir = this.options.get('base-dir') || DEFAULT_BASE_DIR;
@@ -291,6 +273,22 @@ function handleError(message: string): never {
   process.exit(1);
 }
 
+function createCommand(
+  commandName: string,
+  options: CommandLineOptions,
+): Command {
+  switch (commandName) {
+    case 'generate':
+      return new GenerateCommand(options);
+    case 'help':
+      return new HelpCommand();
+    default:
+      handleError(
+        `Unknown command: '${commandName}'. Use 'help' for available commands.`,
+      );
+  }
+}
+
 function main(args: string[]) {
   const options = new CommandLineOptions(args);
   const commandName = options.hasKey('help')
@@ -300,7 +298,7 @@ function main(args: string[]) {
           return arg;
         }
       }) || 'generate';
-  const command = CommandFactory.createCommand(commandName, options);
+  const command = createCommand(commandName, options);
   command.execute();
 }
 
