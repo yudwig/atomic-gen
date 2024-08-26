@@ -50,6 +50,16 @@ class CommandLineOptions {
     return map;
   }
 
+  validate(allowedKeys: string[]): void {
+    const unknownKeys = Array.from(this.optionMap.keys()).filter(
+      (key) => !allowedKeys.includes(key)
+    );
+
+    if (unknownKeys.length > 0) {
+      handleError(`Unknown options provided: --${unknownKeys.join(', --')}`);
+    }
+  }
+
   get(key: string): string | undefined {
     return this.optionMap.get(key);
   }
@@ -278,6 +288,7 @@ function createCommand(
 
 async function main(args: string[]) {
   const options = new CommandLineOptions(args);
+  options.validate(['config', 'base-dir', 'force', 'component-template', 'story-template']);
   const commandName = options.hasKey('help')
     ? 'help'
     : args.slice(2).find((arg) => {
