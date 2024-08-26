@@ -73,7 +73,7 @@ class Component {
   componentDir: string;
   componentPath: string;
   storyPath: string;
-  meta: Map<string, string>
+  meta: {[key: string]: string}
 
   constructor(
     readonly baseDir: string,
@@ -84,7 +84,15 @@ class Component {
     this.componentDir = `${this.baseDir}/${this.componentName}/`;
     this.componentPath = `${this.baseDir}/${this.componentName}/${this.componentName}.tsx`;
     this.storyPath = `${this.baseDir}/${this.componentName}/${this.componentName}.stories.tsx`;
-    this.meta = meta;
+    this.meta = this.mapToObject(meta);
+  }
+
+  private mapToObject(map: Map<string, string>): { [key: string]: string } {
+    const obj: { [key: string]: string } = {};
+    map.forEach((value, key) => {
+      obj[key] = value;
+    });
+    return obj;
   }
 }
 
