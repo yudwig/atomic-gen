@@ -85,25 +85,6 @@ class Component {
   }
 }
 
-class YesNoPrompt {
-  private reader = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  ask(question: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      this.reader.question(`${question} (y/N): `, (answer) => {
-        resolve(answer.trim().toLowerCase() === 'y');
-      });
-    });
-  }
-
-  close() {
-    this.reader.close();
-  }
-}
-
 class ComponentFileGenerator {
   constructor(
     readonly componentTemplate: string,
