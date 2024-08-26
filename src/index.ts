@@ -59,54 +59,6 @@ class CommandLineOptions {
   }
 }
 
-class Config {
-  readonly rawConfigMap: Map<string, (string | RawConfigWithMetadata)[]>;
-
-  constructor(configMap: Map<string, (string | RawConfigWithMetadata)[]>) {
-    this.rawConfigMap = configMap;
-  }
-
-  static loadFromFile(configPath: string): Config {
-    if (!fs.existsSync(configPath)) {
-      handleError(`Configuration file not found: ${configPath}`);
-    }
-    const yaml = parse(
-      fs.readFileSync(path.resolve(configPath), 'utf8'),
-    ) as {[key: string]: (string | RawConfigWithMetadata)[]};
-    const rawConfigMap = new Map<string, (string | RawConfigWithMetadata)[]>(
-      Object.entries(yaml)
-    );
-    return new Config(rawConfigMap)
-  }
-
-  createComponentList(baseDir: string): Component[] {
-    const components: Component[] = [];
-    const rawMetadataListToMap = (list: RawMetadata[]): Map<string, string>  =>  {
-      const map = new Map<string, string>();
-      list.forEach((metadata) => {
-        Object.entries(metadata).forEach( ([key, val]) => {
-          map.set(key, val);
-        });
-      });
-      return map;
-    }
-    this.rawConfigMap.forEach((values, categoryName) => {
-      values.forEach((val) => {
-        if (typeof val === "string") {
-          components.push(new Component(baseDir, categoryName, val));
-        }
-        if (typeof val === "object") {
-          Object.entries(val).forEach( ([componentName, metadataList]) => {
-            const metadataMap = rawMetadataListToMap(metadataList);
-            components.push(new Component(baseDir, categoryName, componentName, metadataMap));
-          });
-        }
-      });
-    });
-    return components;
-  }
-}
-
 class Component {
   readonly baseDir: string;
   readonly categoryName: string;
@@ -192,7 +144,6 @@ class GenerateCommand implements Command {
     if (configPath === undefined) {
       handleError('Input config path. --config={path}');
     }
-    const config = Config.loadFromFile(configPath);
     const baseDir = this.options.get('base-dir') || DEFAULT_BASE_DIR;
     if (!fs.existsSync(baseDir)) {
       console.log(
@@ -203,7 +154,7 @@ class GenerateCommand implements Command {
       fs.mkdirSync(baseDir, { recursive: true });
       console.log(pc.yellow(`Directory '${baseDir}' created successfully.\n`));
     }
-    const components = config.createComponentList(baseDir);
+    const components = loadConfigFromFile(configPath, baseDir);
     const newComponents: Component[] = [];
     const isForce = this.options.hasKey('force');
 
@@ -280,6 +231,41 @@ class HelpCommand implements Command {
     );
     await Promise.resolve();
   }
+}
+
+function loadConfigFromFile(configPath: string, baseDir: string): Component[] {
+  if (!fs.existsSync(configPath)) {
+    handleError(`Configuration file not found: ${configPath}`);
+  }
+  const yaml = parse(
+    fs.readFileSync(path.resolve(configPath), 'utf8'),
+  ) as { [key: string]: (string | RawConfigWithMetadata)[] };
+  const rawMetadataListToMap = (list: RawMetadata[]): Map<string, string> => {
+    const map = new Map<string, string>();
+    list.forEach((metadata) => {
+      Object.entries(metadata).forEach(([key, val]) => {
+        map.set(key, val);
+      });
+    });
+    return map;
+  };
+  const components: Component[] = [];
+  Object.entries(yaml).forEach(([categoryName, values]) => {
+    values.forEach((val) => {
+      if (typeof val === 'string') {
+        components.push(new Component(baseDir, categoryName, val));
+      }
+      if (typeof val === 'object') {
+        Object.entries(val).forEach(([componentName, metadataList]) => {
+          const metadataMap = rawMetadataListToMap(metadataList as RawMetadata[]);
+          components.push(
+            new Component(baseDir, categoryName, componentName, metadataMap),
+          );
+        });
+      }
+    });
+  });
+  return components;
 }
 
 function handleError(message: string): never {
