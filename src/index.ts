@@ -24,6 +24,14 @@ interface Command {
   execute(): Promise<void>;
 }
 
+type RawMetadata = {
+  [key: string]: string;
+}
+
+type RawConfigWithMetadata = {
+  [key: string]: RawMetadata[];
+}
+
 class CommandLineOptions {
   private optionMap: Map<string, string>;
 
@@ -52,45 +60,47 @@ class CommandLineOptions {
 }
 
 class Config {
-  private configMap: Map<string, string[]>;
+  readonly rawConfigMap: Map<string, (string | RawConfigWithMetadata)[]>;
 
-  constructor(configMap: Map<string, string[]>) {
-    this.configMap = configMap;
+  constructor(configMap: Map<string, (string | RawConfigWithMetadata)[]>) {
+    this.rawConfigMap = configMap;
   }
 
   static loadFromFile(configPath: string): Config {
     if (!fs.existsSync(configPath)) {
       handleError(`Configuration file not found: ${configPath}`);
     }
-
-    const rawConfig = parse(
+    const yaml = parse(
       fs.readFileSync(path.resolve(configPath), 'utf8'),
-    ) as { [key: string]: string[] };
-    if (
-      typeof rawConfig !== 'object' ||
-      rawConfig === null ||
-      Array.isArray(rawConfig)
-    ) {
-      handleError(
-        'Invalid configuration format: The file should contain a valid YAML object.',
-      );
-    }
-
-    const configMap = new Map<string, string[]>();
-    Object.entries(rawConfig).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        configMap.set(key, value);
-      }
-    });
-
-    return new Config(configMap);
+    ) as {[key: string]: (string | RawConfigWithMetadata)[]};
+    const rawConfigMap = new Map<string, (string | RawConfigWithMetadata)[]>(
+      Object.entries(yaml)
+    );
+    return new Config(rawConfigMap)
   }
 
   createComponentList(baseDir: string): Component[] {
     const components: Component[] = [];
-    this.configMap.forEach((componentNames, category) => {
-      componentNames.forEach((componentName) => {
-        components.push(new Component(baseDir, category, componentName));
+    const rawMetadataListToMap = (list: RawMetadata[]): Map<string, string>  =>  {
+      const map = new Map<string, string>();
+      list.forEach((metadata) => {
+        Object.entries(metadata).forEach( ([key, val]) => {
+          map.set(key, val);
+        });
+      });
+      return map;
+    }
+    this.rawConfigMap.forEach((values, categoryName) => {
+      values.forEach((val) => {
+        if (typeof val === "string") {
+          components.push(new Component(baseDir, categoryName, val));
+        }
+        if (typeof val === "object") {
+          Object.entries(val).forEach( ([componentName, metadataList]) => {
+            const metadataMap = rawMetadataListToMap(metadataList);
+            components.push(new Component(baseDir, categoryName, componentName, metadataMap));
+          });
+        }
       });
     });
     return components;
@@ -99,13 +109,15 @@ class Config {
 
 class Component {
   readonly baseDir: string;
-  readonly category: string;
+  readonly categoryName: string;
   readonly componentName: string;
+  readonly meta?: Map<string, string>;
 
-  constructor(baseDir: string, category: string, componentName: string) {
+  constructor(baseDir: string, categoryName: string, componentName: string, meta?: Map<string, string>) {
     this.baseDir = baseDir;
-    this.category = category;
+    this.categoryName = categoryName;
     this.componentName = componentName;
+    this.meta = meta;
   }
 
   componentDir(): string {

@@ -1,5 +1,7 @@
 atoms:
-  - Button
+  - Button:
+    - meta1: "var1"
+    - meta2: "var2"
   - Input
 molecules:
   - Form
