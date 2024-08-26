@@ -60,28 +60,21 @@ class CommandLineOptions {
 }
 
 class Component {
-  readonly baseDir: string;
-  readonly categoryName: string;
-  readonly componentName: string;
-  readonly meta?: Map<string, string>;
+  componentDir: string;
+  componentPath: string;
+  storyPath: string;
+  meta: Map<string, string>
 
-  constructor(baseDir: string, categoryName: string, componentName: string, meta?: Map<string, string>) {
-    this.baseDir = baseDir;
-    this.categoryName = categoryName;
-    this.componentName = componentName;
+  constructor(
+    readonly baseDir: string,
+    readonly categoryName: string,
+    readonly componentName: string,
+    meta: Map<string, string> = new Map<string, string>
+  ) {
+    this.componentDir = `${this.baseDir}/${this.componentName}/`;
+    this.componentPath = `${this.baseDir}/${this.componentName}/${this.componentName}.tsx`;
+    this.storyPath = `${this.baseDir}/${this.componentName}/${this.componentName}.stories.tsx`;
     this.meta = meta;
-  }
-
-  componentDir(): string {
-    return `${this.baseDir}/${this.componentName}/`;
-  }
-
-  componentPath(): string {
-    return `${this.baseDir}/${this.componentName}/${this.componentName}.tsx`;
-  }
-
-  storyPath(): string {
-    return `${this.baseDir}/${this.componentName}/${this.componentName}.stories.tsx`;
   }
 }
 
@@ -92,15 +85,15 @@ class ComponentFileGenerator {
   ) {}
 
   generate(component: Component) {
-    if (!fs.existsSync(component.componentDir())) {
-      fs.mkdirSync(component.componentDir(), { recursive: true });
+    if (!fs.existsSync(component.componentDir)) {
+      fs.mkdirSync(component.componentDir, { recursive: true });
     }
     this.createFile(
-      component.componentPath(),
+      component.componentPath,
       this.componentTemplate,
       component,
     );
-    this.createFile(component.storyPath(), this.storyTemplate, component);
+    this.createFile(component.storyPath, this.storyTemplate, component);
   }
 
   private createFile(filePath: string, template: string, data: object) {
@@ -131,7 +124,7 @@ class GenerateCommand implements Command {
     const isForce = this.options.hasKey('force');
 
     components.forEach((component) => {
-      const paths = [component.componentPath(), component.storyPath()];
+      const paths = [component.componentPath, component.storyPath];
       paths.forEach((path) => {
         if (fs.existsSync(path)) {
           if (isForce) {
