@@ -145,15 +145,6 @@ class GenerateCommand implements Command {
       handleError('Input config path. --config={path}');
     }
     const baseDir = this.options.get('base-dir') || DEFAULT_BASE_DIR;
-    if (!fs.existsSync(baseDir)) {
-      console.log(
-        pc.yellow(
-          `The base directory '${baseDir}' does not exist. Creating the directory...`,
-        ),
-      );
-      fs.mkdirSync(baseDir, { recursive: true });
-      console.log(pc.yellow(`Directory '${baseDir}' created successfully.\n`));
-    }
     const components = loadConfigFromFile(configPath, baseDir);
     const newComponents: Component[] = [];
     const isForce = this.options.hasKey('force');
@@ -183,14 +174,22 @@ class GenerateCommand implements Command {
       return;
     }
 
-    const prompt = new YesNoPrompt();
-    const answer = await prompt.ask(
+    const isYes = await askYesNo(
       `This action will create ${newComponents.length} new files. Do you want to proceed? [y/N]:`,
     );
-    prompt.close();
-    if (!answer) {
+    if (!isYes) {
       console.log(pc.yellow('File creation canceled.'));
       return;
+    }
+
+    if (!fs.existsSync(baseDir)) {
+      console.log(
+        pc.yellow(
+          `The base directory '${baseDir}' does not exist. Creating the directory...`,
+        ),
+      );
+      fs.mkdirSync(baseDir, { recursive: true });
+      console.log(pc.yellow(`Directory '${baseDir}' created successfully.\n`));
     }
 
     const componentTemplatePath =
@@ -271,6 +270,20 @@ function loadConfigFromFile(configPath: string, baseDir: string): Component[] {
 function handleError(message: string): never {
   console.error(`Error: ${message}`);
   process.exit(1);
+}
+
+function askYesNo(question: string): Promise<boolean> {
+  const reader = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    reader.question(`${question} (y/N): `, (answer) => {
+      reader.close();
+      resolve(answer.trim().toLowerCase() === 'y');
+    });
+  });
 }
 
 function createCommand(
