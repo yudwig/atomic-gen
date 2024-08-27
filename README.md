@@ -63,24 +63,28 @@ After running the command, the following file structure will be created:
 ```plaintext
 src/
 └── ui-components/
-    ├── Button/
-    │   ├── Button.tsx
-    │   └── Button.stories.tsx
-    ├── Input/
-    │   ├── Input.tsx
-    │   └── Input.stories.tsx
-    ├── Form/
-    │   ├── Form.tsx
-    │   └── Form.stories.tsx
-    ├── Card/
-    │   ├── Card.tsx
-    │   └── Card.stories.tsx
-    ├── Header/
-    │   ├── Header.tsx
-    │   └── Header.stories.tsx
-    └── PageTemplate/
-        ├── PageTemplate.tsx
-        └── PageTemplate.stories.tsx
+    ├── atoms/
+    │   ├── Button/
+    │   │   ├── Button.tsx
+    │   │   └── Button.stories.tsx
+    │   └── Input/
+    │       ├── Input.tsx
+    │       └── Input.stories.tsx
+    ├── molecules/
+    │   ├── Form/
+    │   │   ├── Form.tsx
+    │   │   └── Form.stories.tsx
+    │   └── Card/
+    │       ├── Card.tsx
+    │       └── Card.stories.tsx
+    ├── organisms/
+    │   └── Header/
+    │       ├── Header.tsx
+    │       └── Header.stories.tsx
+    └── templates/
+        └── PageTemplate/
+            ├── PageTemplate.tsx
+            └── PageTemplate.stories.tsx
 ```
 
 ### Template Customization
