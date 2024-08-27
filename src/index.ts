@@ -26,11 +26,11 @@ interface Command {
 
 type RawMetadata = {
   [key: string]: string;
-}
+};
 
 type RawConfigWithMetadata = {
   [key: string]: RawMetadata[];
-}
+};
 
 class CommandLineOptions {
   private optionMap: Map<string, string>;
@@ -52,7 +52,7 @@ class CommandLineOptions {
 
   validate(allowedKeys: string[]): void {
     const unknownKeys = Array.from(this.optionMap.keys()).filter(
-      (key) => !allowedKeys.includes(key)
+      (key) => !allowedKeys.includes(key),
     );
 
     if (unknownKeys.length > 0) {
@@ -73,13 +73,13 @@ class Component {
   componentDir: string;
   componentPath: string;
   storyPath: string;
-  meta: {[key: string]: string}
+  meta: { [key: string]: string };
 
   constructor(
     readonly baseDir: string,
     readonly categoryName: string,
     readonly componentName: string,
-    meta: Map<string, string> = new Map<string, string>
+    meta: Map<string, string> = new Map<string, string>(),
   ) {
     this.componentDir = `${this.baseDir}/${this.categoryName}/${this.componentName}/`;
     this.componentPath = `${this.componentDir}/${this.componentName}.tsx`;
@@ -106,11 +106,7 @@ class ComponentFileGenerator {
     if (!fs.existsSync(component.componentDir)) {
       fs.mkdirSync(component.componentDir, { recursive: true });
     }
-    this.createFile(
-      component.componentPath,
-      this.componentTemplate,
-      component,
-    );
+    this.createFile(component.componentPath, this.componentTemplate, component);
     this.createFile(component.storyPath, this.storyTemplate, component);
   }
 
@@ -184,8 +180,12 @@ class GenerateCommand implements Command {
       console.log(pc.yellow(`Directory '${baseDir}' created successfully.\n`));
     }
 
-    const componentTemplate = readFile(this.options.get('component-template') || DEFAULT_COMPONENT_TMPL_PATH);
-    const storyTemplate = readFile(this.options.get('story-template') || DEFAULT_STORY_TMPL_PATH);
+    const componentTemplate = readFile(
+      this.options.get('component-template') || DEFAULT_COMPONENT_TMPL_PATH,
+    );
+    const storyTemplate = readFile(
+      this.options.get('story-template') || DEFAULT_STORY_TMPL_PATH,
+    );
     const fileGenerator = new ComponentFileGenerator(
       componentTemplate,
       storyTemplate,
@@ -228,7 +228,9 @@ function loadConfigFromFile(configPath: string, baseDir: string): Component[] {
   if (!fs.existsSync(configPath)) {
     handleError(`Configuration file not found: ${configPath}`);
   }
-  const yaml = parse(readFile(path.resolve(configPath))) as { [key: string]: (string | RawConfigWithMetadata)[] };
+  const yaml = parse(readFile(path.resolve(configPath))) as {
+    [key: string]: (string | RawConfigWithMetadata)[];
+  };
   const rawMetadataListToMap = (list: RawMetadata[]): Map<string, string> => {
     const map = new Map<string, string>();
     list.forEach((metadata) => {
@@ -294,7 +296,13 @@ function createCommand(
 
 async function main(args: string[]) {
   const options = new CommandLineOptions(args);
-  options.validate(['config', 'base-dir', 'force', 'component-template', 'story-template']);
+  options.validate([
+    'config',
+    'base-dir',
+    'force',
+    'component-template',
+    'story-template',
+  ]);
   const commandName = options.hasKey('help')
     ? 'help'
     : args.slice(2).find((arg) => {
