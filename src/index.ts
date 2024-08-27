@@ -81,9 +81,9 @@ class Component {
     readonly componentName: string,
     meta: Map<string, string> = new Map<string, string>
   ) {
-    this.componentDir = `${this.baseDir}/${this.componentName}/`;
-    this.componentPath = `${this.baseDir}/${this.componentName}/${this.componentName}.tsx`;
-    this.storyPath = `${this.baseDir}/${this.componentName}/${this.componentName}.stories.tsx`;
+    this.componentDir = `${this.baseDir}/${this.categoryName}/${this.componentName}/`;
+    this.componentPath = `${this.componentDir}/${this.componentName}.tsx`;
+    this.storyPath = `${this.componentDir}/${this.componentName}.stories.tsx`;
     this.meta = this.mapToObject(meta);
   }
 
