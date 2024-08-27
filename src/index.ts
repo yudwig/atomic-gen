@@ -246,7 +246,7 @@ function loadConfigFromFile(configPath: string, baseDir: string): Component[] {
       }
       if (typeof val === 'object') {
         Object.entries(val).forEach(([componentName, metadataList]) => {
-          const metadataMap = rawMetadataListToMap(metadataList as RawMetadata[]);
+          const metadataMap = rawMetadataListToMap(metadataList);
           components.push(
             new Component(baseDir, categoryName, componentName, metadataMap),
           );
