@@ -1,6 +1,6 @@
 {
   "name": "atomic-gen",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A CLI tool for automating the generation of React components and their corresponding Storybook stories using customizable templates.",
   "author": "yudwig",
   "license": "MIT",
