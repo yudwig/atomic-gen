@@ -184,12 +184,8 @@ class GenerateCommand implements Command {
       console.log(pc.yellow(`Directory '${baseDir}' created successfully.\n`));
     }
 
-    const componentTemplatePath =
-      this.options.get('component-template') || DEFAULT_COMPONENT_TMPL_PATH;
-    const storyTemplatePath =
-      this.options.get('story-template') || DEFAULT_STORY_TMPL_PATH;
-    const componentTemplate = fs.readFileSync(componentTemplatePath, 'utf8');
-    const storyTemplate = fs.readFileSync(storyTemplatePath, 'utf8');
+    const componentTemplate = readFile(this.options.get('component-template') || DEFAULT_COMPONENT_TMPL_PATH);
+    const storyTemplate = readFile(this.options.get('story-template') || DEFAULT_STORY_TMPL_PATH);
     const fileGenerator = new ComponentFileGenerator(
       componentTemplate,
       storyTemplate,
@@ -224,13 +220,15 @@ class HelpCommand implements Command {
   }
 }
 
+function readFile(path: string): string {
+  return fs.readFileSync(path, 'utf8');
+}
+
 function loadConfigFromFile(configPath: string, baseDir: string): Component[] {
   if (!fs.existsSync(configPath)) {
     handleError(`Configuration file not found: ${configPath}`);
   }
-  const yaml = parse(
-    fs.readFileSync(path.resolve(configPath), 'utf8'),
-  ) as { [key: string]: (string | RawConfigWithMetadata)[] };
+  const yaml = parse(readFile(path.resolve(configPath))) as { [key: string]: (string | RawConfigWithMetadata)[] };
   const rawMetadataListToMap = (list: RawMetadata[]): Map<string, string> => {
     const map = new Map<string, string>();
     list.forEach((metadata) => {
