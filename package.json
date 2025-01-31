@@ -19,7 +19,8 @@
   "scripts": {
     "build": "tsc --module esnext --outDir dist",
     "start": "yarn build && node dist/cli.js",
-    "format": "eslint && yarn prettier --single-quote src --write"
+    "format": "eslint && yarn prettier --single-quote src --write",
+    "dev": "yarn build && node dist/cli.js --config=./sample-config.yaml --base-dir=./tmp/test/"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
