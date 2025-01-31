@@ -1,14 +1,17 @@
-atoms:
-  - Button:
-    - meta1: "var1"
-    - meta2: "var2"
-  - Input
-molecules:
-  - Form
-  - Card
-organisms:
-  - Header
-  - Footer
-templates:
-  - PageTemplate
-  - ArticleTemplate
+components:
+  atoms:
+    - Button:
+      - meta1: "var1"
+      - meta2: "var2"
+    - Input
+  molecules:
+    - Form
+    - Card
+  organisms:
+    - Header
+    - Footer
+  templates:
+    - PageTemplate
+    - ArticleTemplate
+excludes:
+  - atoms/Button/**
