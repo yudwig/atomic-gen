@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import pc from 'picocolors';
 import Mustache from 'mustache';
 import * as readline from 'node:readline';
+import { minimatch } from 'minimatch';
 
 const PACKAGE_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -22,6 +23,11 @@ const DEFAULT_STORY_TMPL_PATH = path.join(
 
 interface Command {
   execute(): Promise<void>;
+}
+
+interface Config {
+  components: Component[]
+  excludes?: string[];
 }
 
 type RawMetadata = {
@@ -133,23 +139,32 @@ class GenerateCommand implements Command {
       handleError('Input config path. --config={path}');
     }
     const baseDir = this.options.get('base-dir') || DEFAULT_BASE_DIR;
-    const components = loadConfigFromFile(configPath, baseDir);
+    const config = loadConfigFromFile(configPath, baseDir);
     const newComponents: Component[] = [];
     const isForce = this.options.hasKey('force');
 
-    components.forEach((component) => {
+    config.components.forEach((component) => {
       const paths = [component.componentPath, component.storyPath];
-      paths.forEach((path) => {
-        if (fs.existsSync(path)) {
+      paths.forEach((p) => {
+        const normalizedPath = path.normalize(p);
+        const relativePath = path.relative(baseDir, normalizedPath);
+        if (
+          config.excludes &&
+          config.excludes.some((pattern) => minimatch(relativePath, pattern))
+        ) {
+          console.log(pc.gray("excluded: " + normalizedPath));
+          return;
+        }
+        if (fs.existsSync(normalizedPath)) {
           if (isForce) {
-            console.log(pc.magenta('overwrite: ') + path);
+            console.log(pc.magenta('overwrite: ') + normalizedPath);
             newComponents.push(component);
             return;
           }
-          console.log(`skip: ${path}`);
+          console.log(pc.gray(`skip: ${normalizedPath}`));
           return;
         }
-        console.log(pc.green('create: ') + path);
+        console.log(pc.green('create: ') + normalizedPath);
         newComponents.push(component);
       });
     });
@@ -224,13 +239,18 @@ function readFile(path: string): string {
   return fs.readFileSync(path, 'utf8');
 }
 
-function loadConfigFromFile(configPath: string, baseDir: string): Component[] {
+function loadConfigFromFile(configPath: string, baseDir: string): Config {
   if (!fs.existsSync(configPath)) {
     handleError(`Configuration file not found: ${configPath}`);
   }
+
   const yaml = parse(readFile(path.resolve(configPath))) as {
-    [key: string]: (string | RawConfigWithMetadata)[];
+    components: {
+      [key: string]: (string | RawConfigWithMetadata)[];
+    };
+    excludes: string[]
   };
+
   const rawMetadataListToMap = (list: RawMetadata[]): Map<string, string> => {
     const map = new Map<string, string>();
     list.forEach((metadata) => {
@@ -241,7 +261,7 @@ function loadConfigFromFile(configPath: string, baseDir: string): Component[] {
     return map;
   };
   const components: Component[] = [];
-  Object.entries(yaml).forEach(([categoryName, values]) => {
+  Object.entries(yaml.components).forEach(([categoryName, values]) => {
     values.forEach((val) => {
       if (typeof val === 'string') {
         components.push(new Component(baseDir, categoryName, val));
@@ -256,7 +276,10 @@ function loadConfigFromFile(configPath: string, baseDir: string): Component[] {
       }
     });
   });
-  return components;
+  return {
+    components: components,
+    excludes:  yaml.excludes
+  }
 }
 
 function handleError(message: string): never {
