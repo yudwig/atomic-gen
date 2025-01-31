@@ -26,7 +26,7 @@ interface Command {
 }
 
 interface Config {
-  components: Component[]
+  components: Component[];
   excludes?: string[];
 }
 
@@ -152,7 +152,7 @@ class GenerateCommand implements Command {
           config.excludes &&
           config.excludes.some((pattern) => minimatch(relativePath, pattern))
         ) {
-          console.log(pc.gray("excluded: " + normalizedPath));
+          console.log(pc.gray('excluded: ' + normalizedPath));
           return;
         }
         if (fs.existsSync(normalizedPath)) {
@@ -248,7 +248,7 @@ function loadConfigFromFile(configPath: string, baseDir: string): Config {
     components: {
       [key: string]: (string | RawConfigWithMetadata)[];
     };
-    excludes: string[]
+    excludes: string[];
   };
 
   const rawMetadataListToMap = (list: RawMetadata[]): Map<string, string> => {
@@ -278,8 +278,8 @@ function loadConfigFromFile(configPath: string, baseDir: string): Config {
   });
   return {
     components: components,
-    excludes:  yaml.excludes
-  }
+    excludes: yaml.excludes,
+  };
 }
 
 function handleError(message: string): never {
